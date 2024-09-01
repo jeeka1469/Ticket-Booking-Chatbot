@@ -6,7 +6,8 @@ class Avengers {
             "hello": "Hi there! Avenger at your service.",
             "how are you": "We're always ready to save the world!",
             "what's your name": "We are the Avengers.",
-            "bye": "Goodbye! Stay safe, citizen!"
+            "bye": "Goodbye! Stay safe, citizen!",
+            "thanks": "You're welcome! Have a great day!"
         };
 
         // Initialize museum options
@@ -77,7 +78,31 @@ class Avengers {
             case "processPayment":
                 // Payment processing logic
                 this.addMessage('bot', "Payment successful! Thank you for your purchase.");
-                this.step = "askName";  // Reset to initial state
+                this.step = "askHelp";
+                this.askForFurtherHelp();
+                break;
+
+            case "askHelp":
+                if (userInput.toLowerCase() === "bye" || userInput.toLowerCase() === "thanks") {
+                    this.addMessage('bot', this.responses[userInput.toLowerCase()]);
+                    this.resetUserData();
+                    this.step = "askName";  // Reset to initial state
+                } else {
+                    this.step = "showOptions";
+                    this.addMessage('bot', "Please select an option:\n1. Ticket Booking\n2. Previous Booking Enquiry\n3. Ticket Cancellation\n4. Any Other Queries\nOr type 'bye' or 'thanks' to end the chat.");
+                }
+                break;
+
+            case "previousBookingEnquiry":
+                this.previousBookingEnquiry();
+                break;
+
+            case "cancelTicket":
+                this.cancelTicket();
+                break;
+
+            case "handleOtherQueries":
+                this.handleOtherQueries();
                 break;
 
             default:
@@ -104,6 +129,7 @@ class Avengers {
             this.step = "cancelTicket";
             this.cancelTicket();
         } else if (lowerInput === "4") {
+            this.step = "handleOtherQueries";
             this.handleOtherQueries();
         } else {
             this.addMessage('bot', "Sorry, I didn't understand that.");
@@ -112,17 +138,22 @@ class Avengers {
 
     // Function to confirm and save booking details
     confirmBooking() {
-        this.addMessage('bot', `Thank you, ${this.userName}! Your booking details are:\nName: ${this.userName}\nAge: ${this.userAge}\nGender: ${this.userGender}\nMuseum: ${this.userMuseum}\n`);
+        const referenceNumber = this.generateReference();  // Generate a reference number
         this.dataset.push({
-            reference: this.generateReference(),  // Generate a reference number
+            reference: referenceNumber,
             name: this.userName,
             age: this.userAge,
             gender: this.userGender,
             museum: this.userMuseum
         });
         this.saveDataset();  // Save updated dataset to local storage
+
+        // Print the booking details including the reference number
+        this.addMessage('bot', `Thank you, ${this.userName}! Your booking details are:\nReference: ${referenceNumber}\nName: ${this.userName}\nAge: ${this.userAge}\nGender: ${this.userGender}\nMuseum: ${this.userMuseum}\n`);
         this.addMessage('bot', "Your tickets will be processed shortly.");
         this.resetUserData();  // Reset user data for the next interaction
+        this.step = "askHelp";
+        this.askForFurtherHelp();
     }
 
     // Function to generate a random reference number
@@ -179,6 +210,12 @@ class Avengers {
         this.addMessage('bot', "Thank you for reaching out! We have noted your query: \"[QUERY]\"\nOur support team will get back to you shortly. Have a great day!");
     }
 
+    // Function to ask if the user needs further assistance
+    askForFurtherHelp() {
+        this.addMessage('bot', "Is there anything else I can assist you with?\nPlease select an option:\n1. Ticket Booking\n2. Previous Booking Enquiry\n3. Ticket Cancellation\n4. Any Other Queries\nOr type 'bye' or 'thanks' to end the chat.");
+        this.step = "askHelp";
+    }
+
     // Function to reset user data for a new interaction
     resetUserData() {
         this.userName = "";
@@ -200,8 +237,9 @@ function sendMessage() {
 }
 
 // Add event listener to handle Enter key press
-document.getElementById('user-input').addEventListener('keypress', function(event) {
-    if (event.key === 'Enter') {
+document.getElementById('user-input').addEventListener('keypress', function (e) {
+    if (e.key === 'Enter') {
+        e.preventDefault();  // Prevent default Enter key action
         sendMessage();
     }
 });
